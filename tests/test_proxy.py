@@ -116,3 +116,29 @@ def test_disabled_proxy_says_the_catalog_does_not_cover_the_action():
     result = handler.proxy(client, "acme", "usr_8f3a2c", "/v1/secret", "POST", {}, {"a": 1})
 
     assert result == {"error": "The catalog does not cover this action."}
+
+
+def test_disabled_proxy_status_body_says_the_catalog_does_not_cover_the_action():
+    client = _active()
+    client.response = {
+        "status_code": 403,
+        "content_type": "application/json",
+        "body": {"code": "TOOL_PROXY_DISABLED"},
+    }
+
+    result = handler.proxy(client, "acme", "usr_8f3a2c", "/v1/secret", "GET", {}, None)
+
+    assert result == {"error": "The catalog does not cover this action."}
+
+
+def test_vendor_json_content_type_is_json_not_a_file():
+    client = _active()
+    client.response = {
+        "status_code": 200,
+        "content_type": "application/vnd.github+json",
+        "body": {"login": "octocat"},
+    }
+
+    result = handler.proxy(client, "acme", "usr_8f3a2c", "/user", "GET", {}, None)
+
+    assert result == {"login": "octocat"}

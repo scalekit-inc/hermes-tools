@@ -1,5 +1,7 @@
 """Decide what Hermes shows when a standing assistant names a connector."""
 
+import json
+
 
 def authorize(client, connection_name, identifier):
     """Return an approval link, an active status, or a dashboard instruction.
@@ -85,6 +87,8 @@ def proxy(client, connection_name, identifier, path, method, query_params, body)
         return {"error": str(exc)}
     status = raw.get("status_code", 200)
     payload = raw.get("body")
+    if _proxy_disabled(payload):
+        return {"error": "The catalog does not cover this action."}
     if status >= 400:
         return {
             "error": f"Proxy request failed with status {status}.",
@@ -96,6 +100,12 @@ def proxy(client, connection_name, identifier, path, method, query_params, body)
     if isinstance(payload, str) or content_type.startswith("text/"):
         return {"text": payload}
     return {"error": "This response is a file. Saving files is not available yet."}
+
+
+def _proxy_disabled(payload):
+    if isinstance(payload, dict):
+        return "TOOL_PROXY_DISABLED" in json.dumps(payload)
+    return "TOOL_PROXY_DISABLED" in str(payload or "")
 
 
 def list_connections(client):
