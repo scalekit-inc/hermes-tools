@@ -113,9 +113,16 @@ def test_register_publishes_the_authorize_tool_and_the_skill(tmp_path):
 
     authorize = next(tool for tool in ctx.tools if tool[0] == "scalekit_authorize")
     assert "scalekit:scalekit" in authorize[1]["description"]
+    assert [name for name, _path, _description in ctx.skills] == [
+        "scalekit",
+        "hermes-delegated-auth",
+    ]
     skill_name, skill_path, _description = ctx.skills[0]
     assert skill_name == "scalekit"
     assert skill_path.read_text().count("Provider tokens stay in Scalekit") == 1
+    delegated_name, delegated_path, _delegated_description = ctx.skills[1]
+    assert delegated_name == "hermes-delegated-auth"
+    assert "SCALEKIT_IDENTIFIER" in delegated_path.read_text()
     body = json.loads(authorize[2](
         {"connection_name": "gmail-connect"},
         client=FakeScalekit(connection=None),
