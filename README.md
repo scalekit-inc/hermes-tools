@@ -8,6 +8,20 @@ Hermes can call the Scalekit catalog: 500+ connectors and 20,000+ tools, as publ
 - **A finished dashboard connection is not your approval.** The first ask for a new person returns an approval link. After you approve, the same ask returns the profile.
 - **The reply has no provider token.**
 
+## Screenshots
+
+![The Hermes Python has no pip module](screenshots/01-hermes-python-has-no-pip.png)
+
+![The Scalekit package installed with uv](screenshots/02-scalekit-sdk-installed.png)
+
+![The plugin installed and enabled](screenshots/03-plugin-installed-and-enabled.png)
+
+![Hermes lists the Scalekit connections](screenshots/04-list-connections.png)
+
+![The browser says Successfully connected to Github](screenshots/05-github-connected.png)
+
+![Hermes returns the GitHub profile](screenshots/06-github-profile.png)
+
 ## Install
 
 These commands were run on Hermes 0.19.0. Quit any open `hermes` chat first.
