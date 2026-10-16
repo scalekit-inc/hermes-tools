@@ -145,6 +145,50 @@ def register(ctx, env=None, hermes_home=None):
             _execute_tool,
         )
         ctx.register_tool(
+            "scalekit_proxy",
+            "scalekit",
+            {
+                "description": (
+                    "Call a connector API through Scalekit when no named tool exists. "
+                    "Open skill scalekit:scalekit before the first Scalekit action. "
+                    "If the account is not ACTIVE, return the authorization link and do not call the proxy. "
+                    "An unsupported action returns an error and does not wait. "
+                    "Provider tokens stay in Scalekit."
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "connection_name": {
+                            "type": "string",
+                            "description": "Connection name from AgentKit, Connections.",
+                        },
+                        "path": {
+                            "type": "string",
+                            "description": "API path, for example /v1/me.",
+                        },
+                        "method": {
+                            "type": "string",
+                            "description": "HTTP method. Defaults to GET.",
+                        },
+                        "query_params": {
+                            "type": "object",
+                            "description": "Query string parameters.",
+                        },
+                        "body": {
+                            "type": "object",
+                            "description": "JSON request body.",
+                        },
+                        "identifier": {
+                            "type": "string",
+                            "description": "Person id for this call. Omit to use the stored identifier.",
+                        },
+                    },
+                    "required": ["connection_name", "path"],
+                },
+            },
+            _proxy_tool,
+        )
+        ctx.register_tool(
             "scalekit_list_connections",
             "scalekit",
             {
@@ -192,6 +236,23 @@ def _execute_tool(args, **kwargs):
             args.get("tool_name", ""),
             args.get("tool_input") or {},
             _person_id(args, kwargs),
+        )
+    except Exception as exc:
+        result = {"error": str(exc)}
+    return json.dumps(result)
+
+
+def _proxy_tool(args, **kwargs):
+    actions = _load_sibling("handler")
+    try:
+        result = actions.proxy(
+            _client_for(kwargs),
+            args.get("connection_name", ""),
+            _person_id(args, kwargs),
+            args.get("path", ""),
+            args.get("method") or "GET",
+            args.get("query_params") or {},
+            args.get("body"),
         )
     except Exception as exc:
         result = {"error": str(exc)}

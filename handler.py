@@ -65,6 +65,39 @@ def execute(client, connection_name, tool_name, tool_input, identifier):
     return _without_tokens(raw)
 
 
+def proxy(client, connection_name, identifier, path, method, query_params, body):
+    """Return a proxy result, an approval link, or an error. Do not wait."""
+    gate = authorize(client, connection_name, identifier)
+    if gate.get("status") != "ACTIVE":
+        return gate
+    try:
+        raw = client.proxy_request(
+            connection_name=connection_name,
+            identifier=identifier,
+            path=path,
+            method=method or "GET",
+            query_params=query_params or {},
+            body=body,
+        )
+    except Exception as exc:
+        if "TOOL_PROXY_DISABLED" in str(exc):
+            return {"error": "The catalog does not cover this action."}
+        return {"error": str(exc)}
+    status = raw.get("status_code", 200)
+    payload = raw.get("body")
+    if status >= 400:
+        return {
+            "error": f"Proxy request failed with status {status}.",
+            "body": _without_tokens(payload),
+        }
+    content_type = raw.get("content_type") or ""
+    if isinstance(payload, (dict, list)) or "application/json" in content_type:
+        return _without_tokens(payload)
+    if isinstance(payload, str) or content_type.startswith("text/"):
+        return {"text": payload}
+    return {"error": "This response is a file. Saving files is not available yet."}
+
+
 def list_connections(client):
     """Return connection names only. Leave tokens out."""
     return {

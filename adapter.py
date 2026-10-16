@@ -112,6 +112,31 @@ class ScalekitAdapter:
             return result.model_dump()
         return {"result": str(result)}
 
+    def proxy_request(self, connection_name, identifier, path, method, query_params, body):
+        response = self._client().actions.request(
+            connection_name=connection_name,
+            identifier=identifier,
+            path=path,
+            method=method or "GET",
+            query_params=query_params or {},
+            body=body,
+            form_data=None,
+            headers=None,
+        )
+        headers = getattr(response, "headers", {}) or {}
+        content_type = headers.get("Content-Type", "") if hasattr(headers, "get") else ""
+        status = getattr(response, "status_code", 200)
+        if "application/json" in content_type:
+            try:
+                payload = response.json()
+            except Exception:
+                payload = getattr(response, "text", "")
+        elif str(content_type).startswith("text/"):
+            payload = getattr(response, "text", "")
+        else:
+            payload = None
+        return {"status_code": status, "content_type": content_type, "body": payload}
+
     def list_connections(self):
         base = self._env["SCALEKIT_ENVIRONMENT_URL"].rstrip("/")
         headers = {"Authorization": f"Bearer {self._token()}", "Accept": "application/json"}
