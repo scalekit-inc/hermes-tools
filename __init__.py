@@ -1,41 +1,7 @@
-"""Hermes plugin: the tools layer for any Scalekit connector."""
+"""Wire the Scalekit plugin. Schemas, handlers, and Scalekit calls live in sibling modules."""
 
 import importlib.util
-import json
-import os
-import secrets
 from pathlib import Path
-
-REQUIRED_CREDENTIALS = (
-    "SCALEKIT_CLIENT_ID",
-    "SCALEKIT_CLIENT_SECRET",
-    "SCALEKIT_ENVIRONMENT_URL",
-)
-
-
-def missing_credential_message(env):
-    """Name each Scalekit value that is empty. Return None when all are set."""
-    missing = [name for name in REQUIRED_CREDENTIALS if not env.get(name)]
-    if not missing:
-        return None
-    return "Missing Scalekit credentials: " + ", ".join(missing)
-
-
-def _identifier_file(hermes_home):
-    return Path(hermes_home) / "plugin-data" / "hermes-tools" / "identifier"
-
-
-def load_or_create_identifier(hermes_home):
-    """Return the stored identifier. Create usr_<hex> on the first call."""
-    path = _identifier_file(hermes_home)
-    if path.exists():
-        current = path.read_text().strip()
-        if current:
-            return current, False
-    created = "usr_" + secrets.token_hex(4)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(created + "\n")
-    return created, True
 
 
 def _load_sibling(name):
@@ -46,224 +12,35 @@ def _load_sibling(name):
     return module
 
 
-AUTHORIZE_DESCRIPTION = (
-    "Approve one Scalekit connection for the standing assistant. "
-    "Open skill scalekit:scalekit before the first Scalekit action. "
-    "Use the connection name from AgentKit, Connections, not a conn_ id. "
-    "If the account is not ACTIVE, return the authorization link and do not run a tool. "
-    "Provider tokens stay in Scalekit. A scheduled run cannot open the link."
-)
-
-
-def _authorize_tool(args, **kwargs):
-    actions = _load_sibling("handler")
-    client = kwargs.get("client")
-    if client is None:
-        client = _load_sibling("adapter").build_client(kwargs.get("env"))
-    identifier = args.get("identifier") or kwargs.get("identifier")
-    if not identifier:
-        root = kwargs.get("hermes_home")
-        if root is None:
-            root = Path(os.environ.get("HERMES_HOME", Path.home() / ".hermes"))
-        identifier, _created = load_or_create_identifier(root)
-    if not args.get("connection_name"):
-        return json.dumps({"error": "Name the connection, for example gmail-connect."})
-    try:
-        result = actions.authorize(client, args["connection_name"], identifier)
-    except Exception as exc:
-        result = {"error": str(exc)}
-    return json.dumps(result)
+_credentials = _load_sibling("credentials")
+REQUIRED_CREDENTIALS = _credentials.REQUIRED_CREDENTIALS
+missing_credential_message = _credentials.missing_credential_message
+read_credentials = _credentials.read_credentials
 
 
 def register(ctx, env=None, hermes_home=None):
     """Load the plugin. Stop, and name the missing value, before any Scalekit call."""
-    source = os.environ if env is None else env
-    message = missing_credential_message(source)
+    credentials = _credentials
+    source = credentials.read_credentials(env)
+    message = credentials.missing_credential_message(source)
     if message:
         raise RuntimeError(message)
-    root = Path(hermes_home) if hermes_home is not None else Path(os.environ.get("HERMES_HOME", Path.home() / ".hermes"))
-    identifier, created = load_or_create_identifier(root)
+    identifier, created = credentials.load_or_create_identifier(hermes_home)
     if created:
         print(f"Scalekit identifier created: {identifier}", flush=True)
     if hasattr(ctx, "register_tool"):
-        ctx.register_tool(
-            "scalekit_authorize",
-            "scalekit",
-            {
-                "description": AUTHORIZE_DESCRIPTION,
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "connection_name": {
-                            "type": "string",
-                            "description": "Connection name from AgentKit, Connections. Example: gmail-connect.",
-                        },
-                        "identifier": {
-                            "type": "string",
-                            "description": "Person id for this call. Omit to use the stored identifier.",
-                        },
-                    },
-                    "required": ["connection_name"],
-                },
-            },
-            _authorize_tool,
-        )
-        ctx.register_tool(
-            "scalekit_execute_tool",
-            "scalekit",
-            {
-                "description": (
-                    "Call one Scalekit tool after the connected account is ACTIVE. "
-                    "Open skill scalekit:scalekit before the first Scalekit action. "
-                    "If the account is not ACTIVE, return the authorization link and do not run the tool. "
-                    "Omit identifier to use the stored person id. "
-                    "Provider tokens stay in Scalekit."
-                ),
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "connection_name": {
-                            "type": "string",
-                            "description": "Connection name from AgentKit, Connections. Example: github-connect.",
-                        },
-                        "tool_name": {
-                            "type": "string",
-                            "description": "Scalekit tool name, for example github_get_login.",
-                        },
-                        "tool_input": {
-                            "type": "object",
-                            "description": "Arguments from that tool's schema.",
-                        },
-                        "identifier": {
-                            "type": "string",
-                            "description": "Person id for this call. Omit to use the stored identifier.",
-                        },
-                    },
-                    "required": ["connection_name", "tool_name"],
-                },
-            },
-            _execute_tool,
-        )
-        ctx.register_tool(
-            "scalekit_proxy",
-            "scalekit",
-            {
-                "description": (
-                    "Call a connector API through Scalekit when no named tool exists. "
-                    "Open skill scalekit:scalekit before the first Scalekit action. "
-                    "If the account is not ACTIVE, return the authorization link and do not call the proxy. "
-                    "An unsupported action returns an error and does not wait. "
-                    "Provider tokens stay in Scalekit."
-                ),
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "connection_name": {
-                            "type": "string",
-                            "description": "Connection name from AgentKit, Connections.",
-                        },
-                        "path": {
-                            "type": "string",
-                            "description": "API path, for example /v1/me.",
-                        },
-                        "method": {
-                            "type": "string",
-                            "description": "HTTP method. Defaults to GET.",
-                        },
-                        "query_params": {
-                            "type": "object",
-                            "description": "Query string parameters.",
-                        },
-                        "body": {
-                            "type": "object",
-                            "description": "JSON request body.",
-                        },
-                        "identifier": {
-                            "type": "string",
-                            "description": "Person id for this call. Omit to use the stored identifier.",
-                        },
-                    },
-                    "required": ["connection_name", "path"],
-                },
-            },
-            _proxy_tool,
-        )
-        ctx.register_tool(
-            "scalekit_list_connections",
-            "scalekit",
-            {
-                "description": (
-                    "List Scalekit connections on this account. "
-                    "Each row has the connection name, type, and status. "
-                    "Provider tokens are not included."
-                ),
-                "parameters": {"type": "object", "properties": {}},
-            },
-            _list_connections_tool,
-        )
+        schemas = _load_sibling("schemas")
+        tool_handlers = _load_sibling("tool_handlers")
+        for schema in schemas.TOOLS:
+            ctx.register_tool(
+                schema["name"],
+                "scalekit",
+                schema,
+                tool_handlers.HANDLERS[schema["name"]],
+            )
         ctx.register_skill(
             "scalekit",
             Path(__file__).resolve().parent / "skills" / "scalekit" / "SKILL.md",
             "Rules for acting in an app through Scalekit.",
         )
     return identifier
-
-
-def _person_id(args, kwargs):
-    identifier = args.get("identifier") or kwargs.get("identifier")
-    if identifier:
-        return identifier
-    root = kwargs.get("hermes_home")
-    if root is None:
-        root = Path(os.environ.get("HERMES_HOME", Path.home() / ".hermes"))
-    identifier, _created = load_or_create_identifier(root)
-    return identifier
-
-
-def _client_for(kwargs):
-    client = kwargs.get("client")
-    if client is not None:
-        return client
-    return _load_sibling("adapter").build_client(kwargs.get("env"))
-
-
-def _execute_tool(args, **kwargs):
-    actions = _load_sibling("handler")
-    try:
-        result = actions.execute(
-            _client_for(kwargs),
-            args.get("connection_name", ""),
-            args.get("tool_name", ""),
-            args.get("tool_input") or {},
-            _person_id(args, kwargs),
-        )
-    except Exception as exc:
-        result = {"error": str(exc)}
-    return json.dumps(result)
-
-
-def _proxy_tool(args, **kwargs):
-    actions = _load_sibling("handler")
-    try:
-        result = actions.proxy(
-            _client_for(kwargs),
-            args.get("connection_name", ""),
-            _person_id(args, kwargs),
-            args.get("path", ""),
-            args.get("method") or "GET",
-            args.get("query_params") or {},
-            args.get("body"),
-        )
-    except Exception as exc:
-        result = {"error": str(exc)}
-    return json.dumps(result)
-
-
-def _list_connections_tool(args, **kwargs):
-    del args
-    actions = _load_sibling("handler")
-    try:
-        result = actions.list_connections(_client_for(kwargs))
-    except Exception as exc:
-        result = {"error": str(exc)}
-    return json.dumps(result)

@@ -114,10 +114,10 @@ def test_register_publishes_the_authorize_tool_and_the_skill(tmp_path):
         hermes_home=tmp_path,
     )
 
-    assert ctx.tools[0][0] == "scalekit_authorize"
-    assert "scalekit:scalekit" in ctx.tools[0][1]["description"]
+    authorize = next(tool for tool in ctx.tools if tool[0] == "scalekit_authorize")
+    assert "scalekit:scalekit" in authorize[1]["description"]
     skill_name, skill_path, _description = ctx.skills[0]
     assert skill_name == "scalekit"
     assert skill_path.read_text().count("Provider tokens stay in Scalekit") == 1
-    body = json.loads(ctx.tools[0][2]({"connection_name": "gmail-connect"}, client=FakeScalekit(connection=None), identifier="usr_8f3a2c"))
+    body = json.loads(authorize[2]({"connection_name": "gmail-connect"}, client=FakeScalekit(connection=None), identifier="usr_8f3a2c"))
     assert "Create the gmail-connect connection" in body["error"]

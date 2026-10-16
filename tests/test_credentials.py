@@ -57,12 +57,12 @@ def test_register_creates_an_identifier_and_keeps_it(tmp_path, capsys):
     first = register(ctx=object(), env=_values(), hermes_home=tmp_path)
     second = register(ctx=object(), env=_values(), hermes_home=tmp_path)
     shown = capsys.readouterr().out
-    stored = tmp_path / "plugin-data" / "hermes-tools" / "identifier"
+    stored = tmp_path / "plugin-data" / "scalekit" / "identifier"
 
     assert first.startswith("usr_")
     assert second == first
     assert stored.read_text().strip() == first
-    assert not (tmp_path / "plugins" / "hermes-tools" / "identifier").exists()
+    assert not (tmp_path / "plugin-data" / "hermes-tools" / "identifier").exists()
     assert first in shown
     assert shown.count(first) == 1
 
@@ -72,6 +72,33 @@ def test_register_refuses_to_load_when_a_credential_is_missing(tmp_path):
         register(ctx=object(), env={}, hermes_home=tmp_path)
 
     assert list(tmp_path.rglob("identifier")) == []
+
+
+def test_register_keeps_an_identifier_saved_under_the_old_folder(tmp_path, capsys):
+    old = tmp_path / "plugin-data" / "hermes-tools" / "identifier"
+    old.parent.mkdir(parents=True)
+    old.write_text("usr_kept\n")
+
+    found = register(ctx=object(), env=_values(), hermes_home=tmp_path)
+
+    assert found == "usr_kept"
+    assert (tmp_path / "plugin-data" / "scalekit" / "identifier").read_text().strip() == "usr_kept"
+    assert "Scalekit identifier created" not in capsys.readouterr().out
+
+
+def test_secret_reader_wins_over_the_process_environment(monkeypatch):
+    monkeypatch.setenv("SCALEKIT_CLIENT_ID", "from-env")
+
+    def reader(name, default=None):
+        return {
+            "SCALEKIT_CLIENT_ID": "from-secret",
+            "SCALEKIT_CLIENT_SECRET": "secret",
+            "SCALEKIT_ENVIRONMENT_URL": "https://example.scalekit.dev",
+        }.get(name, default)
+
+    values = plugin.read_credentials(secret_reader=reader)
+
+    assert values["SCALEKIT_CLIENT_ID"] == "from-secret"
 
 
 def test_register_reads_the_process_environment_when_no_env_is_passed(monkeypatch, tmp_path):
