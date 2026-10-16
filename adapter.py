@@ -126,7 +126,7 @@ class ScalekitAdapter:
         headers = getattr(response, "headers", {}) or {}
         content_type = headers.get("Content-Type", "") if hasattr(headers, "get") else ""
         status = getattr(response, "status_code", 200)
-        if "application/json" in content_type:
+        if "json" in str(content_type).lower():
             try:
                 payload = response.json()
             except Exception:
