@@ -3,7 +3,9 @@ name = "hermes-tools"
 version = "0.1.0"
 description = "Tools layer for Hermes. Call any Scalekit connector."
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "scalekit-sdk-python>=2.12.0,<3",
+]
 
 [project.optional-dependencies]
 dev = ["pytest>=8,<9"]

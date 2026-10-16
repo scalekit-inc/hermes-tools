@@ -1,4 +1,4 @@
-name: hermes-tools
+name: scalekit
 version: 0.1.0
 description: Tools layer for Hermes. Call any Scalekit connector.
 author: Scalekit
@@ -13,5 +13,6 @@ requires_env:
   - name: SCALEKIT_ENVIRONMENT_URL
     description: "Copy it from Dashboard, Developers, Settings, API Credentials. It looks like https://your-env.scalekit.dev."
     url: https://app.scalekit.com
-provides_tools: []
+provides_tools:
+  - scalekit_authorize
 provides_hooks: []
