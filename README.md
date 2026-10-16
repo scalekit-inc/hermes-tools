@@ -8,20 +8,6 @@ Hermes can call the Scalekit catalog: 500+ connectors and 20,000+ tools, as publ
 - **A finished dashboard connection is not your approval.** The first ask for a new person returns an approval link. After you approve, the same ask returns the profile.
 - **The reply has no provider token.**
 
-## Screenshots
-
-![The Hermes Python has no pip module](screenshots/01-hermes-python-has-no-pip.png)
-
-![The Scalekit package installed with uv](screenshots/02-scalekit-sdk-installed.png)
-
-![The plugin installed and enabled](screenshots/03-plugin-installed-and-enabled.png)
-
-![Hermes lists the Scalekit connections](screenshots/04-list-connections.png)
-
-![The browser says Successfully connected to Github](screenshots/05-github-connected.png)
-
-![Hermes returns the GitHub profile](screenshots/06-github-profile.png)
-
 ## Install
 
 These commands were run on Hermes 0.19.0. Quit any open `hermes` chat first.
@@ -62,6 +48,8 @@ Hermes then asks for three values. Paste them from [app.scalekit.com](https://ap
 
 When Hermes asks `Enable 'scalekit' now?`, type `Y`. The tools show up in the next `hermes` chat. Restart the gateway only if a gateway is already running.
 
+![The plugin installed and enabled](screenshots/01-plugin-installed-and-enabled.png)
+
 Before you install, open [app.scalekit.com](https://app.scalekit.com) → AgentKit → Connections, and write down a connection name. The test used `github-connect`. Its type was `OAUTH` and its status was `COMPLETED`. Do not copy a `conn_` id.
 
 ## Try it
@@ -79,9 +67,17 @@ Use your own connection name.
 ## What to expect
 
 1. **The list names each connection.** You see the name, the type, and the status. In the test, the list had 23 connections, all `COMPLETED`, and `github-connect` was `OAUTH`.
+
+   ![Hermes lists the Scalekit connections](screenshots/02-list-connections.png)
+
 2. **The first ask for a new person returns an approval link.** Open the link. The page says **Successfully connected to Github.** Send the same sentence again. A scheduled job returns the link and stops. Approve the app in a normal chat first.
+
+   ![The browser says Successfully connected to Github](screenshots/03-github-connected.png)
+
 3. **The next ask is ACTIVE.** The reply has the login, the name, and the profile URL. In the test that was `saif-at-scalekit` and `https://github.com/saif-at-scalekit`. The reply has no token.
 4. **A guessed tool name is refused.** Hermes tried `github_get_login`. Scalekit has no tool by that name. Hermes then called `scalekit_proxy` on `/user` and returned the profile.
+
+   ![Hermes returns the GitHub profile](screenshots/04-github-profile.png)
 5. **The plugin creates the person id.** The first launch may print `Scalekit identifier created: usr_…`. You do not type it. An update keeps that id, so an approval you already gave stays `ACTIVE`.
 
 ## Tools
