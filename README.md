@@ -2,7 +2,7 @@
 
 Hermes can call the Scalekit catalog: 500+ connectors and 20,000+ tools, as published on [scalekit.com](https://www.scalekit.com/). Scalekit stores each person's token and refreshes it. You paste three Scalekit account values once. You do not paste a Gmail, Slack, or GitHub token into Hermes.
 
-This page is the path that was run on Hermes 0.19.0. The same steps are what you type.
+These are the commands an external person types on Hermes 0.19.0. The chat transcript below is from that test.
 
 - **Four Hermes tools do the whole catalog.** `scalekit_list_connections`, `scalekit_authorize`, `scalekit_execute_tool`, `scalekit_proxy`.
 - **The dashboard connection is not your approval.** `github-connect` can already be `COMPLETED`. The plugin still creates a new person id. That person must open an approval link.
@@ -35,40 +35,27 @@ Hermes: Connection is ACTIVE.
 
 Your connection name may differ. Your GitHub login will be the account you approved. The 23 connections were the ones on that Scalekit account during the test.
 
-## 1. Get the code
+## 1. Check Hermes
 
 ```bash
-git clone https://github.com/scalekit-inc/hermes-tools.git
-cd hermes-tools
-git checkout main
+hermes --version
 ```
 
-The test used this checkout:
-
-```bash
-cd /home/saif_shines/Projects/scalekit-inc/hermes-tools
-git checkout main
-git status -sb
-```
-
-`git status -sb` printed `## main...origin/main`.
+These steps were run on Hermes 0.19.0. Quit any open `hermes` chat before you install.
 
 ## 2. Install the Scalekit package into Hermes
 
-Hermes 0.19.0 does not install plugin dependencies. This command failed:
+Hermes 0.19.0 does not install plugin dependencies. `python -m pip` fails on that Hermes because it has no `pip` module.
+
+This command reads the Python path from the first line of the `hermes` program and installs the package there:
 
 ```bash
-python -m pip install 'scalekit-sdk-python>=2.12.0,<3'
-# /path/to/hermes/bin/python: No module named pip
+uv pip install --python "$(sed -n '1s/^#!//p' "$(command -v hermes)")" 'scalekit-sdk-python>=2.12.0,<3'
 ```
 
-This command worked. Point `--python` at the Python that runs `hermes`.
+On the test machine that Python was `~/.local/share/mise/installs/pipx-hermes-agent/0.19.0/hermes-agent/bin/python`. The package that installed was `scalekit-sdk-python` 2.21.0.
 
-```bash
-uv pip install --python /path/to/the/hermes/python 'scalekit-sdk-python>=2.12.0,<3'
-```
-
-The test installed `scalekit-sdk-python==2.21.0`. Run this step on a current Hermes too. The Scalekit package needs the `setuptools` library below version 83. Hermes pins `setuptools` 83. Those two pins cannot sit in one environment. The plugin does not declare that package for Hermes to install. `python_runtime: external` would mean a separate program. This plugin runs inside Hermes.
+Run this step on a current Hermes too. The Scalekit package needs the `setuptools` library below version 83. Hermes pins `setuptools` 83. Those two pins cannot sit in one environment, so the plugin leaves this install to you.
 
 ## 3. Copy three values from the dashboard
 
@@ -80,14 +67,20 @@ Open [app.scalekit.com](https://app.scalekit.com).
 ## 4. Install and enable the plugin
 
 ```bash
-hermes plugins install file:///absolute/path/to/hermes-tools
+hermes plugins install scalekit-inc/hermes-tools
 ```
 
-Hermes prints: `Warning: Using insecure/local URL scheme.` Continue.
+`hermes plugins install scalekit` fails until the Hermes catalog lists this plugin. Install from GitHub with the command above.
 
-Hermes then asks for three values. Paste them from the API Credentials page. Each one is saved to `~/.hermes/.env`.
+If Hermes says the plugin is already installed, replace that copy:
 
-| Prompt | What the screen said | What we pasted |
+```bash
+hermes plugins install scalekit-inc/hermes-tools --force
+```
+
+Hermes then asks for three values. Paste them from the API Credentials page. Each one is saved to `~/.hermes/.env`. If Hermes does not ask, those values are already saved.
+
+| Prompt | What the screen said | What you paste |
 |---|---|---|
 | `SCALEKIT_CLIENT_ID` | Copy it from Dashboard, Developers, Settings, API Credentials. It looks like `skc_1234`. | The client id. A production id can start with `prd_skc_`. |
 | `SCALEKIT_CLIENT_SECRET` | It looks like `test_abcdef1234567890`. This is the Scalekit account secret, not a Gmail or Slack token. | The client secret. The screen hides it. |
@@ -95,9 +88,7 @@ Hermes then asks for three values. Paste them from the API Credentials page. Eac
 
 Hermes then prints `Installed` and asks `Enable 'scalekit' now?` Type `Y`.
 
-The test installed to `~/.hermes/plugins/scalekit`. Hermes also printed `hermes gateway restart`. A new `hermes` chat was enough. Restart the gateway only if a gateway is already running.
-
-When the repository is public, `hermes plugins install scalekit-inc/hermes-tools` is the same install. After the Hermes catalog lists this plugin, the command is `hermes plugins install scalekit`. That name is an error until the listing exists.
+The install lands in `~/.hermes/plugins/scalekit`. Hermes may print `hermes gateway restart`. A new `hermes` chat is enough. Restart the gateway only if a gateway is already running.
 
 ## 5. List the connections
 
