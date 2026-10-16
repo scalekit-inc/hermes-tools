@@ -1,6 +1,7 @@
 name: scalekit
 version: 0.1.0
 description: Tools layer for Hermes. Call any Scalekit connector.
+python_runtime: external
 author: Scalekit
 requires_env:
   - name: SCALEKIT_CLIENT_ID

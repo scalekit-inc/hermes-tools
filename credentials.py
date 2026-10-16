@@ -35,7 +35,7 @@ def read_credentials(env=None, secret_reader=None):
         if reader is not None:
             values[name] = reader(name) or ""
         else:
-            values[name] = os.environ.get(name) or ""
+            values[name] = ""
     return values
 
 
@@ -57,11 +57,10 @@ def load_or_create_identifier(hermes_home):
     path = directory / "identifier"
     if path.exists() and path.read_text().strip():
         return path.read_text().strip(), False
-    if hermes_home is not None:
-        old = Path(hermes_home) / "plugin-data" / "hermes-tools" / "identifier"
-        if old.exists() and old.read_text().strip():
-            path.write_text(old.read_text())
-            return path.read_text().strip(), False
+    old = directory.parent / "hermes-tools" / "identifier"
+    if old.is_file() and old.read_text().strip():
+        path.write_text(old.read_text())
+        return path.read_text().strip(), False
     created = "usr_" + secrets.token_hex(4)
     path.write_text(created + "\n")
     return created, True

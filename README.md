@@ -68,7 +68,7 @@ This command worked. Point `--python` at the Python that runs `hermes`.
 uv pip install --python /path/to/the/hermes/python 'scalekit-sdk-python>=2.12.0,<3'
 ```
 
-The test installed `scalekit-sdk-python==2.21.0`. A current Hermes asks to install this package during plugin install. You can skip this step there.
+The test installed `scalekit-sdk-python==2.21.0`. Run this step on a current Hermes too. The Scalekit package needs the `setuptools` library below version 83. Hermes pins `setuptools` 83. Those two pins cannot sit in one environment. The manifest says `python_runtime: external`, so Hermes does not try to install the package for you.
 
 ## 3. Copy three values from the dashboard
 
@@ -148,6 +148,14 @@ You're signed in on GitHub as saif-at-scalekit (via github-connect).
 Use your own connection name in the sentence. A scheduled job cannot open the approval link. Approve the app in a normal chat first.
 
 To act as another person for one turn, put that person's id in the same sentence, for example `as identifier usr_8f3a2c`.
+
+## What leaves this machine
+
+The plugin calls the Scalekit API at the environment URL you paste. That call lists connections, asks for an approval link, runs a named tool, or proxies one HTTP request.
+
+It stores one person id at `plugin-data/scalekit/identifier` under the Hermes home. Hermes keeps that directory when you update or remove the plugin.
+
+It reads the three Scalekit values with Hermes `get_secret`. A scheduled run returns the approval link and stops. The plugin starts no shell command and no background process. It sends no telemetry.
 
 ## What this plugin does not do
 

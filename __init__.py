@@ -23,11 +23,11 @@ def register(ctx, env=None, hermes_home=None):
     credentials = _credentials
     source = credentials.read_credentials(env)
     message = credentials.missing_credential_message(source)
-    if message:
-        raise RuntimeError(message)
-    identifier, created = credentials.load_or_create_identifier(hermes_home)
-    if created:
-        print(f"Scalekit identifier created: {identifier}", flush=True)
+    identifier = None
+    if message is None:
+        identifier, created = credentials.load_or_create_identifier(hermes_home)
+        if created:
+            print(f"Scalekit identifier created: {identifier}", flush=True)
     if hasattr(ctx, "register_tool"):
         schemas = _load_sibling("schemas")
         tool_handlers = _load_sibling("tool_handlers")
