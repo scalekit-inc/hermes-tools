@@ -103,16 +103,13 @@ def test_register_publishes_the_authorize_tool_and_the_skill(tmp_path):
         def register_skill(self, name, path, description=""):
             self.skills.append((name, Path(path), description))
 
+    env = {
+        "SCALEKIT_CLIENT_ID": "skc_test",
+        "SCALEKIT_CLIENT_SECRET": "secret",
+        "SCALEKIT_ENVIRONMENT_URL": "https://example.scalekit.dev",
+    }
     ctx = Ctx()
-    plugin.register(
-        ctx,
-        env={
-            "SCALEKIT_CLIENT_ID": "skc_test",
-            "SCALEKIT_CLIENT_SECRET": "secret",
-            "SCALEKIT_ENVIRONMENT_URL": "https://example.scalekit.dev",
-        },
-        hermes_home=tmp_path,
-    )
+    plugin.register(ctx, env=env, hermes_home=tmp_path)
 
     authorize = next(tool for tool in ctx.tools if tool[0] == "scalekit_authorize")
     assert "scalekit:scalekit" in authorize[1]["description"]
@@ -123,10 +120,6 @@ def test_register_publishes_the_authorize_tool_and_the_skill(tmp_path):
         {"connection_name": "gmail-connect"},
         client=FakeScalekit(connection=None),
         identifier="usr_8f3a2c",
-        env={
-            "SCALEKIT_CLIENT_ID": "skc_test",
-            "SCALEKIT_CLIENT_SECRET": "secret",
-            "SCALEKIT_ENVIRONMENT_URL": "https://example.scalekit.dev",
-        },
+        env=env,
     ))
     assert "Create the gmail-connect connection" in body["error"]

@@ -19,15 +19,10 @@ read_credentials = _credentials.read_credentials
 
 
 def register(ctx, env=None, hermes_home=None):
-    """Load the plugin. Stop, and name the missing value, before any Scalekit call."""
-    credentials = _credentials
-    source = credentials.read_credentials(env)
-    message = credentials.missing_credential_message(source)
+    """Publish the tools. Hermes discovery passes no env, so this does not read secrets."""
     identifier = None
-    if message is None:
-        identifier, created = credentials.load_or_create_identifier(hermes_home)
-        if created:
-            print(f"Scalekit identifier created: {identifier}", flush=True)
+    if env is not None and _credentials.missing_credential_message(env) is None:
+        identifier, _created = _credentials.load_or_create_identifier(hermes_home)
     if hasattr(ctx, "register_tool"):
         schemas = _load_sibling("schemas")
         tool_handlers = _load_sibling("tool_handlers")

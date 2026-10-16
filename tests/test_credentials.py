@@ -51,7 +51,7 @@ def test_install_asks_for_the_three_scalekit_values_with_guidance():
     assert "skc_1234" in manifest
     assert "test_" in manifest
     assert "https://your-env.scalekit.dev" in manifest
-    assert "python_runtime: external" in manifest
+    assert "python_runtime" not in manifest
 
 
 def test_register_creates_an_identifier_and_keeps_it(tmp_path, capsys):
@@ -78,6 +78,34 @@ class _Ctx:
 
     def register_skill(self, name, path, description=""):
         del name, path, description
+
+
+def test_hermes_discovery_does_not_read_secrets(tmp_path, monkeypatch, capsys):
+    import types
+
+    def boom(name, default=None):
+        del name, default
+        raise RuntimeError("unscoped")
+
+    secret_scope = types.ModuleType("agent.secret_scope")
+    secret_scope.get_secret = boom
+    monkeypatch.setitem(sys.modules, "agent", types.ModuleType("agent"))
+    monkeypatch.setitem(sys.modules, "agent.secret_scope", secret_scope)
+    ctx = _Ctx()
+
+    result = register(ctx, hermes_home=tmp_path)
+
+    assert result is None
+    assert set(ctx.tools) == {
+        "scalekit_authorize",
+        "scalekit_execute_tool",
+        "scalekit_list_connections",
+        "scalekit_proxy",
+    }
+    assert list(tmp_path.rglob("identifier")) == []
+    assert capsys.readouterr().out == ""
+    body = json.loads(ctx.tools["scalekit_list_connections"]({}))
+    assert body["error"] == "unscoped"
 
 
 def test_register_publishes_tools_when_credentials_are_missing(tmp_path):

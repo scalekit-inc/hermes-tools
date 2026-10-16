@@ -3,9 +3,7 @@ name = "hermes-tools"
 version = "0.1.0"
 description = "Tools layer for Hermes. Call any Scalekit connector."
 requires-python = ">=3.11"
-dependencies = [
-    "scalekit-sdk-python>=2.12.0,<3",
-]
+dependencies = []
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

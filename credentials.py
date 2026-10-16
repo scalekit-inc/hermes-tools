@@ -55,12 +55,15 @@ def load_or_create_identifier(hermes_home):
     """Return the stored person id. Create usr_<hex> the first time."""
     directory = _data_dir(hermes_home)
     path = directory / "identifier"
-    if path.exists() and path.read_text().strip():
-        return path.read_text().strip(), False
+    current = path.read_text().strip() if path.is_file() else ""
+    if current:
+        return current, False
     old = directory.parent / "hermes-tools" / "identifier"
-    if old.is_file() and old.read_text().strip():
-        path.write_text(old.read_text())
-        return path.read_text().strip(), False
+    previous = old.read_text() if old.is_file() else ""
+    if previous.strip():
+        path.write_text(previous if previous.endswith("\n") else previous + "\n")
+        return previous.strip(), False
     created = "usr_" + secrets.token_hex(4)
     path.write_text(created + "\n")
+    print(f"Scalekit identifier created: {created}", flush=True)
     return created, True
