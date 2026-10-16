@@ -19,17 +19,25 @@ class ScalekitAdapter:
 
     def __init__(self, env):
         self._env = env
-        self._sdk = None
+        try:
+            from plugins.plugin_utils import SingletonSlot
+            self._slot = SingletonSlot()
+        except ImportError:
+            self._slot = None
+            self._sdk = None
 
     def _client(self):
-        if self._sdk is None:
+        def build():
             import scalekit.client as scalekit_sdk
-
-            self._sdk = scalekit_sdk.ScalekitClient(
+            return scalekit_sdk.ScalekitClient(
                 self._env["SCALEKIT_ENVIRONMENT_URL"],
                 self._env["SCALEKIT_CLIENT_ID"],
                 self._env["SCALEKIT_CLIENT_SECRET"],
             )
+        if self._slot is not None:
+            return self._slot.get(build)
+        if self._sdk is None:
+            self._sdk = build()
         return self._sdk
 
     def _token(self):
