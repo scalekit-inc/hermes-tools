@@ -89,7 +89,7 @@ Use your own connection name.
 | `scalekit_execute_tool` | Calls one named tool after the account is `ACTIVE`. |
 | `scalekit_proxy` | Calls one HTTP path when the connector has no named tool. |
 
-The rules Hermes reads are in the bundled skill `scalekit:scalekit`. Open it before the first Scalekit action.
+The rules Hermes reads are in the bundled skill `scalekit:scalekit`, which you open before the first Scalekit action, and in `scalekit:hermes-delegated-auth`.
 
 <details>
 <summary>Disclosure</summary>
