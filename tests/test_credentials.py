@@ -13,16 +13,25 @@ missing_credential_message = plugin.missing_credential_message
 register = plugin.register
 
 
+def _values():
+    return {
+        "SCALEKIT_CLIENT_ID": "skc_test",
+        "SCALEKIT_CLIENT_SECRET": "secret",
+        "SCALEKIT_ENVIRONMENT_URL": "https://example.scalekit.dev",
+    }
+
+
 def test_plugin_stops_and_names_each_missing_credential():
     message = missing_credential_message({})
 
     assert message is not None
     for name in REQUIRED_CREDENTIALS:
         assert name in message
+    assert "SCALEKIT_IDENTIFIER" not in message
 
 
 def test_plugin_names_only_the_credential_that_is_missing():
-    present = {name: "set" for name in REQUIRED_CREDENTIALS}
+    present = _values()
     present["SCALEKIT_CLIENT_SECRET"] = ""
 
     message = missing_credential_message(present)
@@ -32,28 +41,38 @@ def test_plugin_names_only_the_credential_that_is_missing():
     assert "SCALEKIT_CLIENT_ID" not in message
 
 
-def test_complete_credentials_do_not_stop_the_plugin():
-    present = {name: "set" for name in REQUIRED_CREDENTIALS}
-
-    assert missing_credential_message(present) is None
-    register(ctx=object(), env=present)
-
-
-def test_register_refuses_to_load_when_a_credential_is_missing():
-    with pytest.raises(RuntimeError, match="SCALEKIT_IDENTIFIER"):
-        register(ctx=object(), env={})
-
-
-def test_register_reads_the_process_environment_when_no_env_is_passed(monkeypatch):
-    for name in REQUIRED_CREDENTIALS:
-        monkeypatch.delenv(name, raising=False)
-
-    with pytest.raises(RuntimeError, match="SCALEKIT_CLIENT_ID"):
-        register(ctx=object())
-
-
-def test_install_asks_for_the_four_scalekit_values():
+def test_install_asks_for_the_three_scalekit_values_with_guidance():
     manifest = (_ROOT / "plugin.yaml").read_text()
 
     for name in REQUIRED_CREDENTIALS:
         assert f"name: {name}" in manifest
+    assert "SCALEKIT_IDENTIFIER" not in manifest
+    assert "Dashboard, Developers, Settings, API Credentials" in manifest
+    assert "skc_" in manifest
+    assert "https://your-env.scalekit.dev" in manifest
+
+
+def test_register_creates_an_identifier_and_keeps_it(tmp_path, capsys):
+    first = register(ctx=object(), env=_values(), home=tmp_path)
+    second = register(ctx=object(), env=_values(), home=tmp_path)
+    shown = capsys.readouterr().out
+
+    assert first.startswith("usr_")
+    assert second == first
+    assert first in shown
+    assert shown.count(first) == 1
+
+
+def test_register_refuses_to_load_when_a_credential_is_missing(tmp_path):
+    with pytest.raises(RuntimeError, match="SCALEKIT_ENVIRONMENT_URL"):
+        register(ctx=object(), env={}, home=tmp_path)
+
+    assert list(tmp_path.rglob("identifier")) == []
+
+
+def test_register_reads_the_process_environment_when_no_env_is_passed(monkeypatch, tmp_path):
+    for name in REQUIRED_CREDENTIALS:
+        monkeypatch.delenv(name, raising=False)
+
+    with pytest.raises(RuntimeError, match="SCALEKIT_CLIENT_ID"):
+        register(ctx=object(), home=tmp_path)
