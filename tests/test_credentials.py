@@ -1,7 +1,7 @@
 import importlib.util
+import json
+import sys
 from pathlib import Path
-
-import pytest
 
 _ROOT = Path(__file__).resolve().parents[1]
 _spec = importlib.util.spec_from_file_location("hermes_tools_plugin", _ROOT / "__init__.py")
@@ -51,6 +51,7 @@ def test_install_asks_for_the_three_scalekit_values_with_guidance():
     assert "skc_1234" in manifest
     assert "test_" in manifest
     assert "https://your-env.scalekit.dev" in manifest
+    assert "python_runtime" not in manifest
 
 
 def test_register_creates_an_identifier_and_keeps_it(tmp_path, capsys):
@@ -67,10 +68,63 @@ def test_register_creates_an_identifier_and_keeps_it(tmp_path, capsys):
     assert shown.count(first) == 1
 
 
-def test_register_refuses_to_load_when_a_credential_is_missing(tmp_path):
-    with pytest.raises(RuntimeError, match="SCALEKIT_ENVIRONMENT_URL"):
-        register(ctx=object(), env={}, hermes_home=tmp_path)
+class _Ctx:
+    def __init__(self):
+        self.tools = {}
 
+    def register_tool(self, name, toolset, schema, tool_handler, **kwargs):
+        del toolset, schema, kwargs
+        self.tools[name] = tool_handler
+
+    def register_skill(self, name, path, description=""):
+        del name, path, description
+
+
+def test_hermes_discovery_does_not_read_secrets(tmp_path, monkeypatch, capsys):
+    import types
+
+    def boom(name, default=None):
+        del name, default
+        raise RuntimeError("unscoped")
+
+    secret_scope = types.ModuleType("agent.secret_scope")
+    secret_scope.get_secret = boom
+    monkeypatch.setitem(sys.modules, "agent", types.ModuleType("agent"))
+    monkeypatch.setitem(sys.modules, "agent.secret_scope", secret_scope)
+    ctx = _Ctx()
+
+    result = register(ctx, hermes_home=tmp_path)
+
+    assert result is None
+    assert set(ctx.tools) == {
+        "scalekit_authorize",
+        "scalekit_execute_tool",
+        "scalekit_list_connections",
+        "scalekit_proxy",
+    }
+    assert list(tmp_path.rglob("identifier")) == []
+    assert capsys.readouterr().out == ""
+    body = json.loads(ctx.tools["scalekit_list_connections"]({}))
+    assert body["error"] == "unscoped"
+
+
+def test_register_publishes_tools_when_credentials_are_missing(tmp_path):
+    ctx = _Ctx()
+
+    result = register(ctx, env={}, hermes_home=tmp_path)
+
+    assert result is None
+    assert set(ctx.tools) == {
+        "scalekit_authorize",
+        "scalekit_execute_tool",
+        "scalekit_list_connections",
+        "scalekit_proxy",
+    }
+    for handler in ctx.tools.values():
+        body = json.loads(handler({}, env={}))
+        assert "SCALEKIT_CLIENT_ID" in body["error"]
+        assert "SCALEKIT_CLIENT_SECRET" in body["error"]
+        assert "SCALEKIT_ENVIRONMENT_URL" in body["error"]
     assert list(tmp_path.rglob("identifier")) == []
 
 
@@ -101,9 +155,46 @@ def test_secret_reader_wins_over_the_process_environment(monkeypatch):
     assert values["SCALEKIT_CLIENT_ID"] == "from-secret"
 
 
-def test_register_reads_the_process_environment_when_no_env_is_passed(monkeypatch, tmp_path):
-    for name in REQUIRED_CREDENTIALS:
-        monkeypatch.delenv(name, raising=False)
+def test_missing_secret_api_does_not_read_the_process_environment(monkeypatch):
+    import builtins
 
-    with pytest.raises(RuntimeError, match="SCALEKIT_CLIENT_ID"):
-        register(ctx=object(), hermes_home=tmp_path)
+    real_import = builtins.__import__
+
+    def blocked(name, *args, **kwargs):
+        if name == "agent" or name.startswith("agent."):
+            raise ImportError(name)
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.delitem(sys.modules, "agent.secret_scope", raising=False)
+    monkeypatch.setattr(builtins, "__import__", blocked)
+    monkeypatch.setenv("SCALEKIT_CLIENT_ID", "from-env")
+    monkeypatch.setenv("SCALEKIT_CLIENT_SECRET", "from-env")
+    monkeypatch.setenv("SCALEKIT_ENVIRONMENT_URL", "https://from-env.example")
+
+    values = plugin.read_credentials()
+
+    assert values == {name: "" for name in REQUIRED_CREDENTIALS}
+
+
+def test_register_copies_the_old_identifier_when_plugin_data_dir_is_used(tmp_path, monkeypatch, capsys):
+    import types
+
+    old = tmp_path / "plugin-data" / "hermes-tools" / "identifier"
+    old.parent.mkdir(parents=True)
+    old.write_text("usr_kept\n")
+    storage = types.ModuleType("plugins.plugin_storage")
+
+    def plugin_data_dir(name):
+        path = tmp_path / "plugin-data" / name
+        path.mkdir(parents=True, exist_ok=True)
+        return path
+
+    storage.plugin_data_dir = plugin_data_dir
+    monkeypatch.setitem(sys.modules, "plugins", types.ModuleType("plugins"))
+    monkeypatch.setitem(sys.modules, "plugins.plugin_storage", storage)
+
+    found = register(ctx=object(), env=_values(), hermes_home=None)
+
+    assert found == "usr_kept"
+    assert (tmp_path / "plugin-data" / "scalekit" / "identifier").read_text().strip() == "usr_kept"
+    assert "Scalekit identifier created" not in capsys.readouterr().out

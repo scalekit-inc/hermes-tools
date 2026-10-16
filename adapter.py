@@ -1,7 +1,6 @@
 """The only module that talks to Scalekit."""
 
 import json
-import os
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
@@ -159,5 +158,5 @@ class ScalekitAdapter:
                 return found
 
 
-def build_client(env=None):
-    return ScalekitAdapter(os.environ if env is None else env)
+def build_client(env):
+    return ScalekitAdapter(env)
