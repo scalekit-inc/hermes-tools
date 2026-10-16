@@ -47,25 +47,29 @@ def test_install_asks_for_the_three_scalekit_values_with_guidance():
     for name in REQUIRED_CREDENTIALS:
         assert f"name: {name}" in manifest
     assert "SCALEKIT_IDENTIFIER" not in manifest
-    assert "Dashboard, Developers, Settings, API Credentials" in manifest
-    assert "skc_" in manifest
+    assert manifest.count("Copy it from Dashboard, Developers, Settings, API Credentials") == 3
+    assert "skc_1234" in manifest
+    assert "test_" in manifest
     assert "https://your-env.scalekit.dev" in manifest
 
 
 def test_register_creates_an_identifier_and_keeps_it(tmp_path, capsys):
-    first = register(ctx=object(), env=_values(), home=tmp_path)
-    second = register(ctx=object(), env=_values(), home=tmp_path)
+    first = register(ctx=object(), env=_values(), hermes_home=tmp_path)
+    second = register(ctx=object(), env=_values(), hermes_home=tmp_path)
     shown = capsys.readouterr().out
+    stored = tmp_path / "plugin-data" / "hermes-tools" / "identifier"
 
     assert first.startswith("usr_")
     assert second == first
+    assert stored.read_text().strip() == first
+    assert not (tmp_path / "plugins" / "hermes-tools" / "identifier").exists()
     assert first in shown
     assert shown.count(first) == 1
 
 
 def test_register_refuses_to_load_when_a_credential_is_missing(tmp_path):
     with pytest.raises(RuntimeError, match="SCALEKIT_ENVIRONMENT_URL"):
-        register(ctx=object(), env={}, home=tmp_path)
+        register(ctx=object(), env={}, hermes_home=tmp_path)
 
     assert list(tmp_path.rglob("identifier")) == []
 
@@ -75,4 +79,4 @@ def test_register_reads_the_process_environment_when_no_env_is_passed(monkeypatc
         monkeypatch.delenv(name, raising=False)
 
     with pytest.raises(RuntimeError, match="SCALEKIT_CLIENT_ID"):
-        register(ctx=object(), home=tmp_path)
+        register(ctx=object(), hermes_home=tmp_path)

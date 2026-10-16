@@ -19,13 +19,13 @@ def missing_credential_message(env):
     return "Missing Scalekit credentials: " + ", ".join(missing)
 
 
-def _identifier_file(home):
-    return Path(home) / "plugins" / "hermes-tools" / "identifier"
+def _identifier_file(hermes_home):
+    return Path(hermes_home) / "plugin-data" / "hermes-tools" / "identifier"
 
 
-def load_or_create_identifier(home):
+def load_or_create_identifier(hermes_home):
     """Return the stored identifier. Create usr_<hex> on the first call."""
-    path = _identifier_file(home)
+    path = _identifier_file(hermes_home)
     if path.exists():
         current = path.read_text().strip()
         if current:
@@ -36,14 +36,14 @@ def load_or_create_identifier(home):
     return created, True
 
 
-def register(ctx, env=None, home=None):
+def register(ctx, env=None, hermes_home=None):
     """Load the plugin. Stop, and name the missing value, before any Scalekit call."""
     del ctx
     source = os.environ if env is None else env
     message = missing_credential_message(source)
     if message:
         raise RuntimeError(message)
-    root = Path(home) if home is not None else Path(os.environ.get("HERMES_HOME", Path.home() / ".hermes"))
+    root = Path(hermes_home) if hermes_home is not None else Path(os.environ.get("HERMES_HOME", Path.home() / ".hermes"))
     identifier, created = load_or_create_identifier(root)
     if created:
         print(f"Scalekit identifier created: {identifier}", flush=True)

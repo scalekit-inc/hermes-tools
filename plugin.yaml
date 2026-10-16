@@ -4,14 +4,14 @@ description: Tools layer for Hermes. Call any Scalekit connector.
 author: Scalekit
 requires_env:
   - name: SCALEKIT_CLIENT_ID
-    description: "Scalekit client id. Copy it from Dashboard, Developers, Settings, API Credentials. It looks like skc_1234."
+    description: "Copy it from Dashboard, Developers, Settings, API Credentials. It looks like skc_1234."
     url: https://app.scalekit.com
   - name: SCALEKIT_CLIENT_SECRET
-    description: "Scalekit client secret from Dashboard, Developers, Settings, API Credentials. This is the Scalekit account secret, not a Gmail or Slack token."
+    description: "Copy it from Dashboard, Developers, Settings, API Credentials. It looks like test_abcdef1234567890. This is the Scalekit account secret, not a Gmail or Slack token."
     secret: true
     url: https://app.scalekit.com
   - name: SCALEKIT_ENVIRONMENT_URL
-    description: "Scalekit environment URL from Dashboard, Developers, Settings, API Credentials. It looks like https://your-env.scalekit.dev."
+    description: "Copy it from Dashboard, Developers, Settings, API Credentials. It looks like https://your-env.scalekit.dev."
     url: https://app.scalekit.com
 provides_tools: []
 provides_hooks: []
