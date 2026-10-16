@@ -38,7 +38,7 @@ If Hermes says the plugin is already installed, replace that copy:
 hermes plugins install scalekit-inc/hermes-tools --force
 ```
 
-Hermes then asks for three values. Paste them from [app.scalekit.com](https://app.scalekit.com), Dashboard, Developers, Settings, API Credentials. If Hermes does not ask, those values are already saved.
+Hermes then asks for three values. Paste them from [app.scalekit.com](https://app.scalekit.com) → Dashboard → Developers → Settings → API Credentials. If Hermes does not ask, those values are already saved.
 
 | Prompt | What you paste |
 |---|---|
@@ -48,7 +48,7 @@ Hermes then asks for three values. Paste them from [app.scalekit.com](https://ap
 
 When Hermes asks `Enable 'scalekit' now?`, type `Y`. The tools show up in the next `hermes` chat. Restart the gateway only if a gateway is already running.
 
-Before you install, open AgentKit, then Connections, and write down a connection name. The test used `github-connect`. Its type was `OAUTH` and its status was `COMPLETED`. Do not copy a `conn_` id.
+Before you install, open [app.scalekit.com](https://app.scalekit.com) → AgentKit → Connections, and write down a connection name. The test used `github-connect`. Its type was `OAUTH` and its status was `COMPLETED`. Do not copy a `conn_` id.
 
 ## Try it
 
@@ -95,8 +95,8 @@ The rules Hermes reads are in the bundled skill `scalekit:scalekit`. Open it bef
 <details>
 <summary>Tips</summary>
 
-- Manage every connector in the Scalekit dashboard, under AgentKit, then Connections. Add the connector there, then tell Hermes the connection name, such as `github-connect`.
-- Create the Scalekit account in the dashboard. Copy the three API values from Developers, Settings, API Credentials. The install prompt is where those values go.
+- Manage every connector at [app.scalekit.com](https://app.scalekit.com) → AgentKit → Connections. Add the connector there, then tell Hermes the connection name, such as `github-connect`.
+- Create the Scalekit account in the dashboard. Copy the three API values from [app.scalekit.com](https://app.scalekit.com) → Dashboard → Developers → Settings → API Credentials. The install prompt is where those values go.
 - Cursor, Claude Code, Copilot, and Codex keep using authstack, including the skill `hermes-delegated-auth`. Hermes uses this plugin and the skill `scalekit:scalekit`.
 - The four tools cover every connector in the account. Ask in a sentence. Hermes picks list, authorize, a named tool, or the proxy.
 - A file from the proxy comes back in the chat. Save it from the reply when you want the file on disk.
