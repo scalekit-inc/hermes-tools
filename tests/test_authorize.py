@@ -68,6 +68,17 @@ def test_inactive_oauth_account_returns_an_authorization_link_and_does_not_run_a
     assert client.execute_calls == 0
 
 
+def test_draft_connection_tells_the_standing_assistant_to_finish_it():
+    client = FakeScalekit(
+        connection={"key_id": "gmail-connect", "type": "OAUTH", "status": "DRAFT"},
+    )
+
+    result = handler.authorize(client, "gmail-connect", "usr_8f3a2c")
+
+    assert result == {"error": "Finish the gmail-connect connection in the Scalekit dashboard."}
+    assert client.link_calls == 0
+
+
 def test_active_account_reports_active_and_does_not_ask_for_a_link():
     client = FakeScalekit(
         connection={"key_id": "gmail-connect", "type": "OAUTH", "status": "COMPLETED"},
