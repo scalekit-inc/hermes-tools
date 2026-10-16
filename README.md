@@ -2,52 +2,21 @@
 
 Hermes can call the Scalekit catalog: 500+ connectors and 20,000+ tools, as published on [scalekit.com](https://www.scalekit.com/). Scalekit stores each person's token and refreshes it. You paste three Scalekit account values once. You do not paste a Gmail, Slack, or GitHub token into Hermes.
 
-These are the commands an external person types on Hermes 0.19.0. The chat transcript below is from that test.
+- **Four tools cover the catalog.** `scalekit_list_connections`, `scalekit_authorize`, `scalekit_execute_tool`, `scalekit_proxy`.
+- **One install command.** `hermes plugins install scalekit-inc/hermes-tools`.
+- **The key prompt is the install.** Hermes asks for the three values and saves them to `~/.hermes/.env`.
+- **A finished dashboard connection is not your approval.** The first ask for a new person returns an approval link. After you approve, the same ask returns the profile.
+- **The reply has no provider token.**
 
-- **Four Hermes tools do the whole catalog.** `scalekit_list_connections`, `scalekit_authorize`, `scalekit_execute_tool`, `scalekit_proxy`.
-- **The dashboard connection is not your approval.** `github-connect` can already be `COMPLETED`. The plugin still creates a new person id. That person must open an approval link.
-- **The first GitHub question returns a link.** After you approve, the same question returns the GitHub profile.
-- **A guessed tool name is refused.** Hermes tried `github_get_login`. The plugin said that tool does not exist. `scalekit_proxy` on `/user` then returned the profile.
-- **The chat shows no token.** The reply has the login, the name, and the profile URL. It has no `refresh_token` and no `access_token`.
+## Install
 
-## What the chat looked like
-
-```text
-You: List my Scalekit connections.
-
-Hermes: Your Scalekit connections (23 total). All show status COMPLETED.
-        github-connect    OAUTH    COMPLETED
-
-You: Who am I on GitHub? Use the connection github-connect.
-
-Hermes: github-connect is not ACTIVE yet.
-        Open this link to approve it.
-
-# The browser page says: Successfully connected to Github.
-
-You: Who am I on GitHub? Use the connection github-connect.
-
-Hermes: Connection is ACTIVE.
-        No tool named github_get_login was found.
-        You're signed in on GitHub as saif-at-scalekit (via github-connect).
-        Profile: https://github.com/saif-at-scalekit
-```
-
-Your connection name may differ. Your GitHub login will be the account you approved. The 23 connections were the ones on that Scalekit account during the test.
-
-## 1. Check Hermes
+These commands were run on Hermes 0.19.0. Quit any open `hermes` chat first.
 
 ```bash
 hermes --version
 ```
 
-These steps were run on Hermes 0.19.0. Quit any open `hermes` chat before you install.
-
-## 2. Install the Scalekit package into Hermes
-
-Hermes 0.19.0 does not install plugin dependencies. `python -m pip` fails on that Hermes because it has no `pip` module.
-
-This command reads the Python path from the first line of the `hermes` program and installs the package there:
+Hermes 0.19.0 does not install plugin dependencies. `python -m pip` fails on that Hermes because it has no `pip` module. This command reads the Python path from the first line of the `hermes` program and installs the Scalekit package there:
 
 ```bash
 uv pip install --python "$(sed -n '1s/^#!//p' "$(command -v hermes)")" 'scalekit-sdk-python>=2.12.0,<3'
@@ -57,20 +26,11 @@ On the test machine that Python was `~/.local/share/mise/installs/pipx-hermes-ag
 
 Run this step on a current Hermes too. The Scalekit package needs the `setuptools` library below version 83. Hermes pins `setuptools` 83. Those two pins cannot sit in one environment, so the plugin leaves this install to you.
 
-## 3. Copy three values from the dashboard
-
-Open [app.scalekit.com](https://app.scalekit.com).
-
-1. Go to AgentKit, then Connections. The test used `github-connect`. Its type was `OAUTH` and its status was `COMPLETED`. Write down your connection name. Do not copy a `conn_` id.
-2. Go to Developers, then Settings, then API Credentials. Leave that page open.
-
-## 4. Install and enable the plugin
-
 ```bash
 hermes plugins install scalekit-inc/hermes-tools
 ```
 
-`hermes plugins install scalekit` fails until the Hermes catalog lists this plugin. Install from GitHub with the command above.
+`hermes plugins install scalekit` fails until the Hermes catalog lists this plugin.
 
 If Hermes says the plugin is already installed, replace that copy:
 
@@ -78,75 +38,58 @@ If Hermes says the plugin is already installed, replace that copy:
 hermes plugins install scalekit-inc/hermes-tools --force
 ```
 
-Hermes then asks for three values. Paste them from the API Credentials page. Each one is saved to `~/.hermes/.env`. If Hermes does not ask, those values are already saved.
+Hermes then asks for three values. Paste them from [app.scalekit.com](https://app.scalekit.com), Dashboard, Developers, Settings, API Credentials. If Hermes does not ask, those values are already saved.
 
-| Prompt | What the screen said | What you paste |
-|---|---|---|
-| `SCALEKIT_CLIENT_ID` | Copy it from Dashboard, Developers, Settings, API Credentials. It looks like `skc_1234`. | The client id. A production id can start with `prd_skc_`. |
-| `SCALEKIT_CLIENT_SECRET` | It looks like `test_abcdef1234567890`. This is the Scalekit account secret, not a Gmail or Slack token. | The client secret. The screen hides it. |
-| `SCALEKIT_ENVIRONMENT_URL` | It looks like `https://your-env.scalekit.dev`. | The environment URL from that same page. |
+| Prompt | What you paste |
+|---|---|
+| `SCALEKIT_CLIENT_ID` | The client id. It looks like `skc_1234`. A production id can start with `prd_skc_`. |
+| `SCALEKIT_CLIENT_SECRET` | The client secret. It looks like `test_abcdef1234567890`. This is the Scalekit account secret, not a Gmail or Slack token. |
+| `SCALEKIT_ENVIRONMENT_URL` | The environment URL. It looks like `https://your-env.scalekit.dev`. |
 
-Hermes then prints `Installed` and asks `Enable 'scalekit' now?` Type `Y`.
+When Hermes asks `Enable 'scalekit' now?`, type `Y`. The tools show up in the next `hermes` chat. Restart the gateway only if a gateway is already running.
 
-The install lands in `~/.hermes/plugins/scalekit`. Hermes may print `hermes gateway restart`. A new `hermes` chat is enough. Restart the gateway only if a gateway is already running.
+Before you install, open AgentKit, then Connections, and write down a connection name. The test used `github-connect`. Its type was `OAUTH` and its status was `COMPLETED`. Do not copy a `conn_` id.
 
-## 5. List the connections
-
-```bash
-hermes
-```
-
-Type:
+## Try it
 
 ```text
 List my Scalekit connections.
 ```
 
-Hermes loaded the skill `scalekit:scalekit` and called `scalekit_list_connections`. The test reply started with `Your Scalekit connections (23 total). All show status COMPLETED.` and included:
-
-```text
-github-connect    OAUTH    COMPLETED
-```
-
-No token was in the list. The first launch may print `Scalekit identifier created: usr_…`. That id is the person Hermes will act as. You do not type it.
-
-## 6. Approve the app, then ask again
-
-In the same chat, type:
-
 ```text
 Who am I on GitHub? Use the connection github-connect.
 ```
 
-The test reply was:
-
-```text
-github-connect is not ACTIVE yet. Open this link to approve it.
-```
-
-Open the link. The page says **Successfully connected to Github.** Go back to the same chat and send the same sentence.
-
-The test reply was:
-
-```text
-Connection is ACTIVE. Fetching your GitHub login.
-No tool named github_get_login was found.
-You're signed in on GitHub as saif-at-scalekit (via github-connect).
-```
-
-`github_get_login` is a name Hermes guessed. Scalekit does not have that tool. Hermes then called `scalekit_proxy` on `/user` and returned the profile: login, name, profile URL, company, public repo count, and followers. The reply had no `refresh_token` and no `access_token`.
-
-Use your own connection name in the sentence. A scheduled job cannot open the approval link. Approve the app in a normal chat first.
+Use your own connection name. The first time that person has not approved the app, Hermes returns an approval link and stops. Open the link. Send the same sentence again. A scheduled job cannot open that link. Approve the app in a normal chat first.
 
 To act as another person for one turn, put that person's id in the same sentence, for example `as identifier usr_8f3a2c`.
 
-## What leaves this machine
+## What the 16 Oct 2026 test showed
 
-The plugin calls the Scalekit API at the environment URL you paste. That call lists connections, asks for an approval link, runs a named tool, or proxies one HTTP request.
+The account had 23 connections. All were `COMPLETED`. `github-connect` was `OAUTH`.
 
-It stores one person id at `plugin-data/scalekit/identifier` under the Hermes home. Hermes keeps that directory when you update or remove the plugin. If `plugin-data/hermes-tools/identifier` already exists, the plugin reads that file and copies the id across. That read is outside the plugin's own data directory.
+The first GitHub question returned an approval link. The browser page said **Successfully connected to Github.** The second question was `ACTIVE`. Hermes guessed a tool named `github_get_login`. Scalekit does not have that tool. Hermes then called `scalekit_proxy` on `/user`. The reply was the GitHub login `saif-at-scalekit`, the name, and `https://github.com/saif-at-scalekit`. It had no `refresh_token` and no `access_token`.
 
-It reads the three Scalekit values with Hermes `get_secret`. A scheduled run returns the approval link and stops. The plugin starts no shell command and no background process. It sends no telemetry.
+A later run on the same machine kept that approval. The person id was copied from `plugin-data/hermes-tools/identifier` to `plugin-data/scalekit/identifier`. The first launch on a new machine may print `Scalekit identifier created: usr_…`. You do not type it.
+
+## Tools
+
+| Tool | What it does |
+|---|---|
+| `scalekit_list_connections` | Lists the connections in your Scalekit account. |
+| `scalekit_authorize` | Returns an approval link, or `ACTIVE` when this person already approved the connection. |
+| `scalekit_execute_tool` | Calls one named tool after the account is `ACTIVE`. |
+| `scalekit_proxy` | Calls one HTTP path when the connector has no named tool. |
+
+The rules Hermes reads are in the bundled skill `scalekit:scalekit`. Open it before the first Scalekit action.
+
+## Disclosure
+
+- **Network:** the plugin's HTTP calls go to the environment URL you paste. That call lists connections, asks Scalekit for an approval link, runs a named tool, or proxies one HTTP request. You open the approval link in your browser.
+- **Credentials:** install saves the three Scalekit values in the Hermes home `.env`. The plugin reads them with Hermes `get_secret`. It does not read a `.env` file itself. Provider tokens stay in Scalekit. The chat reply does not include them.
+- **Stored data:** one person id at `<HERMES_HOME>/plugin-data/scalekit/identifier`. Hermes keeps that directory when you update or remove the plugin. If `plugin-data/hermes-tools/identifier` already exists, the plugin reads that file and copies the id. That read is outside this plugin's own data directory.
+- **Where the tools run:** after you enable the plugin, the four tools are on every Hermes surface that shares the tool registry, including a messaging gateway. A person that gateway admits can ask Hermes to call them with your Scalekit values.
+- No shell commands, no background processes, no telemetry, no self-updating. A scheduled run returns the approval link and stops.
 
 ## What this plugin does not do
 
@@ -154,7 +97,21 @@ It reads the three Scalekit values with Hermes `get_secret`. A scheduled run ret
 - It does not create the connection. You create that once under AgentKit, then Connections.
 - It does not install authstack. Authstack is the skill pack for Cursor, Claude Code, Copilot, and Codex.
 - It does not change the skill `hermes-delegated-auth`.
-- It does not register one Hermes tool per Scalekit action. The four tools above cover the catalog.
+- It does not register one Hermes tool per Scalekit action.
 - It does not save a file returned by the proxy.
 
-The rules Hermes reads are in the bundled skill `scalekit:scalekit`.
+## Development
+
+```bash
+python -m pytest tests
+hermes plugins validate . --install-deps
+hermes plugins doctor . --ci
+```
+
+The tests use a fake Scalekit client and send no requests.
+
+Install a local checkout with:
+
+```bash
+hermes plugins install "file://$PWD"
+```
