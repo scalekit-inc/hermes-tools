@@ -17,4 +17,5 @@ provides_tools:
   - scalekit_authorize
   - scalekit_execute_tool
   - scalekit_list_connections
+  - scalekit_proxy
 provides_hooks: []

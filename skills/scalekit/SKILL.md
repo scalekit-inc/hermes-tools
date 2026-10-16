@@ -35,3 +35,7 @@ Pass `identifier` only when the standing assistant names another person for this
 When the account is `ACTIVE`, call `scalekit_list_connections` to see the connection name, then `scalekit_execute_tool` with `connection_name`, `tool_name`, and `tool_input`.
 
 The result must not contain a provider token. If the account is not `ACTIVE`, the tool returns an authorization link and does not run the action. A scheduled run cannot open that link.
+
+## Proxy
+
+When the connector has no named tool, call `scalekit_proxy` with `connection_name`, `path`, and `method`. The result is JSON or text. If the catalog does not cover the action, say so and stop. Do not save a file from this tool.
