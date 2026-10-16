@@ -1,8 +1,8 @@
-# Scalekit for Hermes
+# Connect Hermes Agent to 500+ connectors and 20k+ tools
 
-Hermes can act in Gmail, GitHub, Slack, and the other apps you connect in Scalekit. Scalekit stores the token and refreshes it. You paste three Scalekit account values once. You do not paste each app's token into Hermes.
+Hermes can call the Scalekit catalog: 500+ connectors and 20,000+ tools. Scalekit stores each person's token and refreshes it. You paste three Scalekit account values once. You do not paste a Gmail, Slack, or GitHub token into Hermes.
 
-- **One install, four tools.** Hermes shows `scalekit_list_connections`, `scalekit_authorize`, `scalekit_execute_tool`, and `scalekit_proxy`.
+- **500+ connectors. 20,000+ tools.** That is the Scalekit AgentKit catalog published at [scalekit.com](https://www.scalekit.com/). This plugin reaches it with four Hermes tools: `scalekit_list_connections`, `scalekit_authorize`, `scalekit_execute_tool`, and `scalekit_proxy`.
 - **A connection is not enough.** The plugin creates a new person id on first launch. That person must approve each app, even when the connection already exists in the dashboard.
 - **The approval link is the product.** The first call returns `authorization_link`. You open it. You ask again. The account is then `ACTIVE`.
 - **A wrong tool name does not invent data.** Hermes may guess a tool name. The plugin says that tool does not exist. Hermes can then call the app's API through `scalekit_proxy`.
