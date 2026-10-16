@@ -1,0 +1,12 @@
+[project]
+name = "hermes-tools"
+version = "0.1.0"
+description = "Tools layer for Hermes. Call any Scalekit connector."
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<9"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
