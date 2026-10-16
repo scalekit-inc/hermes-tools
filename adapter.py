@@ -73,7 +73,7 @@ class ScalekitAdapter:
                 connection_name=connection_name,
                 identifier=identifier,
             ).connected_account
-        except (HTTPError, URLError, OSError, RuntimeError):
+        except Exception:
             return None
         return {"status": account.status}
 
@@ -83,6 +83,47 @@ class ScalekitAdapter:
             identifier=identifier,
         )
         return link.link
+
+    def get_tool_schema(self, tool_name):
+        from google.protobuf.json_format import MessageToDict
+        from scalekit.v1.tools.tools_pb2 import Filter
+
+        response, _ = self._client().tools.list_tools(filter=Filter(tool_name=[tool_name]))
+        payload = MessageToDict(response, preserving_proto_field_name=True)
+        tools = payload.get("tools") or []
+        if not tools:
+            return None
+        return tools[0]
+
+    def execute_tool(self, tool_name, connection_name, identifier, tool_input):
+        account = self._client().connect.get_or_create_connected_account(
+            connection_name=connection_name,
+            identifier=identifier,
+        ).connected_account
+        result = self._client().connect.execute_tool(
+            tool_name=tool_name,
+            identifier=identifier,
+            connected_account_id=account.id,
+            tool_input=tool_input or {},
+        )
+        if isinstance(result, dict):
+            return result
+        if hasattr(result, "model_dump"):
+            return result.model_dump()
+        return {"result": str(result)}
+
+    def list_connections(self):
+        base = self._env["SCALEKIT_ENVIRONMENT_URL"].rstrip("/")
+        headers = {"Authorization": f"Bearer {self._token()}", "Accept": "application/json"}
+        page_token = ""
+        found = []
+        while True:
+            query = urlencode({"page_size": 30, "page_token": page_token})
+            data = _http_json("GET", f"{base}/api/v1/connections/app?{query}", headers)
+            found.extend(data.get("connections", []))
+            page_token = data.get("next_page_token") or ""
+            if not page_token:
+                return found
 
 
 def build_client(env=None):

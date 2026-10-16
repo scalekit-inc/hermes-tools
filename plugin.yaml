@@ -15,4 +15,6 @@ requires_env:
     url: https://app.scalekit.com
 provides_tools:
   - scalekit_authorize
+  - scalekit_execute_tool
+  - scalekit_list_connections
 provides_hooks: []

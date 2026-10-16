@@ -32,3 +32,48 @@ def authorize(client, connection_name, identifier):
             "error": f"Finish the {connection_name} connection in the Scalekit dashboard."
         }
     return {"status": "ACTIVE"}
+
+
+_TOKEN_KEYS = {"access_token", "refresh_token", "id_token", "client_secret", "token"}
+
+
+def _without_tokens(value):
+    if isinstance(value, dict):
+        return {
+            key: _without_tokens(item)
+            for key, item in value.items()
+            if key not in _TOKEN_KEYS
+        }
+    if isinstance(value, list):
+        return [_without_tokens(item) for item in value]
+    return value
+
+
+def execute(client, connection_name, tool_name, tool_input, identifier):
+    """Return a tool result, an approval link, or an error. Never a provider token."""
+    gate = authorize(client, connection_name, identifier)
+    if gate.get("status") != "ACTIVE":
+        return gate
+    if not client.get_tool_schema(tool_name):
+        return {"error": f"No tool named {tool_name} was found."}
+    try:
+        raw = client.execute_tool(tool_name, connection_name, identifier, tool_input or {})
+    except Exception as exc:
+        return {"error": str(exc)}
+    if not isinstance(raw, dict):
+        raw = {"result": raw}
+    return _without_tokens(raw)
+
+
+def list_connections(client):
+    """Return connection names only. Leave tokens out."""
+    return {
+        "connections": [
+            {
+                "connection_name": connection.get("key_id"),
+                "type": connection.get("type"),
+                "status": connection.get("status"),
+            }
+            for connection in client.list_connections()
+        ]
+    }

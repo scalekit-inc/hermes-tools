@@ -29,3 +29,9 @@ Call `scalekit_authorize` with the connection name. Open this skill as `scalekit
 - If the result is `{"status": "ACTIVE"}`, the person has already approved the app.
 
 Pass `identifier` only when the standing assistant names another person for this turn.
+
+## Call a tool
+
+When the account is `ACTIVE`, call `scalekit_list_connections` to see the connection name, then `scalekit_execute_tool` with `connection_name`, `tool_name`, and `tool_input`.
+
+The result must not contain a provider token. If the account is not `ACTIVE`, the tool returns an authorization link and does not run the action. A scheduled run cannot open that link.

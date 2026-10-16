@@ -108,9 +108,101 @@ def register(ctx, env=None, hermes_home=None):
             },
             _authorize_tool,
         )
+        ctx.register_tool(
+            "scalekit_execute_tool",
+            "scalekit",
+            {
+                "description": (
+                    "Call one Scalekit tool after the connected account is ACTIVE. "
+                    "Open skill scalekit:scalekit before the first Scalekit action. "
+                    "If the account is not ACTIVE, return the authorization link and do not run the tool. "
+                    "Omit identifier to use the stored person id. "
+                    "Provider tokens stay in Scalekit."
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "connection_name": {
+                            "type": "string",
+                            "description": "Connection name from AgentKit, Connections. Example: github-connect.",
+                        },
+                        "tool_name": {
+                            "type": "string",
+                            "description": "Scalekit tool name, for example github_get_login.",
+                        },
+                        "tool_input": {
+                            "type": "object",
+                            "description": "Arguments from that tool's schema.",
+                        },
+                        "identifier": {
+                            "type": "string",
+                            "description": "Person id for this call. Omit to use the stored identifier.",
+                        },
+                    },
+                    "required": ["connection_name", "tool_name"],
+                },
+            },
+            _execute_tool,
+        )
+        ctx.register_tool(
+            "scalekit_list_connections",
+            "scalekit",
+            {
+                "description": (
+                    "List Scalekit connections on this account. "
+                    "Each row has the connection name, type, and status. "
+                    "Provider tokens are not included."
+                ),
+                "parameters": {"type": "object", "properties": {}},
+            },
+            _list_connections_tool,
+        )
         ctx.register_skill(
             "scalekit",
             Path(__file__).resolve().parent / "skills" / "scalekit" / "SKILL.md",
             "Rules for acting in an app through Scalekit.",
         )
     return identifier
+
+
+def _person_id(args, kwargs):
+    identifier = args.get("identifier") or kwargs.get("identifier")
+    if identifier:
+        return identifier
+    root = kwargs.get("hermes_home")
+    if root is None:
+        root = Path(os.environ.get("HERMES_HOME", Path.home() / ".hermes"))
+    identifier, _created = load_or_create_identifier(root)
+    return identifier
+
+
+def _client_for(kwargs):
+    client = kwargs.get("client")
+    if client is not None:
+        return client
+    return _load_sibling("adapter").build_client(kwargs.get("env"))
+
+
+def _execute_tool(args, **kwargs):
+    actions = _load_sibling("handler")
+    try:
+        result = actions.execute(
+            _client_for(kwargs),
+            args.get("connection_name", ""),
+            args.get("tool_name", ""),
+            args.get("tool_input") or {},
+            _person_id(args, kwargs),
+        )
+    except Exception as exc:
+        result = {"error": str(exc)}
+    return json.dumps(result)
+
+
+def _list_connections_tool(args, **kwargs):
+    del args
+    actions = _load_sibling("handler")
+    try:
+        result = actions.list_connections(_client_for(kwargs))
+    except Exception as exc:
+        result = {"error": str(exc)}
+    return json.dumps(result)
