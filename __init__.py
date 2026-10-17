@@ -38,9 +38,4 @@ def register(ctx, env=None, hermes_home=None):
             Path(__file__).resolve().parent / "skills" / "scalekit" / "SKILL.md",
             "Rules for acting in an app through Scalekit.",
         )
-        ctx.register_skill(
-            "hermes-delegated-auth",
-            Path(__file__).resolve().parent / "skills" / "hermes-delegated-auth" / "SKILL.md",
-            "Act as a named user through Scalekit AgentKit.",
-        )
     return identifier

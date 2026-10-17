@@ -16,15 +16,7 @@ These commands were run on Hermes 0.19.0. Quit any open `hermes` chat first.
 hermes --version
 ```
 
-Hermes 0.19.0 does not install plugin dependencies. `python -m pip` fails on that Hermes because it has no `pip` module. This command reads the Python path from the first line of the `hermes` program and installs the Scalekit package there:
-
-```bash
-uv pip install --python "$(sed -n '1s/^#!//p' "$(command -v hermes)")" 'scalekit-sdk-python>=2.12.0,<3'
-```
-
-On the test machine that Python was `~/.local/share/mise/installs/pipx-hermes-agent/0.19.0/hermes-agent/bin/python`. The package that installed was `scalekit-sdk-python` 2.21.0.
-
-Run this step on a current Hermes too. The Scalekit package needs the `setuptools` library below version 83. Hermes pins `setuptools` 83. Those two pins cannot sit in one environment, so the plugin leaves this install to you.
+The plugin uses only the Python standard library. It installs no package into the Hermes Python.
 
 ```bash
 hermes plugins install scalekit-inc/hermes-tools
@@ -89,7 +81,7 @@ Use your own connection name.
 | `scalekit_execute_tool` | Calls one named tool after the account is `ACTIVE`. |
 | `scalekit_proxy` | Calls one HTTP path when the connector has no named tool. |
 
-The rules Hermes reads are in the bundled skill `scalekit:scalekit`, which you open before the first Scalekit action, and in `scalekit:hermes-delegated-auth`.
+The rules Hermes reads are in the bundled skill `scalekit:scalekit`, which you open before the first Scalekit action.
 
 <details>
 <summary>Disclosure</summary>
