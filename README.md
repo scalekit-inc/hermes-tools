@@ -1,6 +1,6 @@
-# Connect Hermes Agent to 500+ connectors and 20k+ tools
+# Connect Hermes Agent to 600+ connectors and 35,000+ tools
 
-Hermes can call the Scalekit catalog: 500+ connectors and 20,000+ tools, as published on [scalekit.com](https://www.scalekit.com/). Scalekit stores each person's token and refreshes it. You paste three Scalekit account values once. You do not paste a Gmail, Slack, or GitHub token into Hermes.
+Hermes can call the Scalekit catalog: 600+ connectors and 35,000+ tools, as published on [scalekit.com](https://www.scalekit.com/). Scalekit stores each person's token and refreshes it. You paste three Scalekit account values once. You do not paste a Gmail, Slack, or GitHub token into Hermes.
 
 - **Four tools cover the catalog.** `scalekit_list_connections`, `scalekit_authorize`, `scalekit_execute_tool`, `scalekit_proxy`.
 - **One install command.** `hermes plugins install scalekit-inc/hermes-tools`.
